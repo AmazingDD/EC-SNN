@@ -1,6 +1,6 @@
 import torch.nn as nn
 from copy import deepcopy
-from spikingjelly.activation_based import layer, neuron, surrogate
+from spikingjelly.activation_based import layer
 
 
 cfg = {
@@ -14,6 +14,8 @@ cfg = {
 class VGG(nn.Module):
     def __init__(self, act='ann', arch='vgg9', num_cls=10, input_dim=3, img_height=0, img_width=0, spiking_neuron: callable = None, **kwargs):
         super().__init__()
+
+        assert arch in cfg.keys(), f'{arch} unavailable'
 
         print(f'------------- {arch.upper()} -------------')
 

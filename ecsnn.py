@@ -30,26 +30,7 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 #############################################
 
-# python ecsnn.py -arch=cifarnet -act=snn -device=cuda:4 -train 
-# python ecsnn.py -arch=cifarnet -act=ann -device=cuda:4 -train 
-# python ecsnn.py -arch=cifarnet -act=snn -prune -b=128 -split_dir=./splitted/ -device=cuda:4 -apoz=95 -c 0 1 2 3 4 5 6 7 8 9
-# python ecsnn.py -arch=cifarnet -act=ann -prune -b=128 -split_dir=./splitted/ -device=cuda:4 -apoz=56 -c 0 1 2 3 4 5 6 7 8 9
-# python ecsnn.py -arch=cifarnet -act=snn -fusion -split_dir=./splitted/ -device=cuda:4 -b=128
-# python ecsnn.py -arch=cifarnet -act=ann -fusion -split_dir=./splitted/ -device=cuda:4 -b=128
-
-# python ecsnn.py -arch=cifarnet -act=snn -device=cuda:4 -infer 
-# python ecsnn.py -arch=cifarnet -act=ann -device=cuda:4 -infer 
-
-# python ecsnn.py -arch=cifarnet -act=snn -device=cuda:4 -infer -split -split_dir=./splitted/
-# python ecsnn.py -arch=cifarnet -act=ann -device=cuda:4 -infer -split -split_dir=./splitted/
-
-# python ecsnn.py -arch=cifarnet -act=snn -device=cuda:4 -energy -device=cuda:4 -b=128
-# python ecsnn.py -arch=cifarnet -act=ann -device=cuda:4 -energy -device=cuda:4 -b=128
-
-# python ecsnn.py -arch=cifarnet -act=snn -device=cuda:4 -energy -split -split_dir=./splitted/ -device=cuda:4 -b=128
-# python ecsnn.py -arch=cifarnet -act=ann -device=cuda:4 -energy -split -split_dir=./splitted/ -device=cuda:4 -b=128
-
-parser = argparse.ArgumentParser(description='CifarNet for validating pruning can reduce computation overhead of SNN')
+parser = argparse.ArgumentParser(description='EC-SNN interface for all experiments')
 
 parser.add_argument('-num_cls', default=10, type=int, help='number of class for classification')
 parser.add_argument('-model_dir', type=str, default='./trained/', help='root dir for saving trained model')

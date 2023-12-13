@@ -2,10 +2,9 @@ import os
 import cv2
 import librosa
 import datetime
+
 import numpy as np
 import pandas as pd
-
-from prettytable import PrettyTable
 from sklearn.model_selection import train_test_split
 
 import torch
@@ -19,13 +18,6 @@ from spikingjelly.datasets.n_mnist import NMNIST
 from spikingjelly.datasets.cifar10_dvs import CIFAR10DVS
 from spikingjelly.datasets.n_caltech101 import NCaltech101 
 
-
-vgg_cfg = {
-	'vgg5' : [64, 'P', 128, 128, 'P'],
-	'vgg9': [64, 64, 'P', 128, 128, 'P', 256, 256, 256, 'P'],
-    'vgg19': [64, 64, 'P', 128, 128, 'P', 256, 256, 256, 256, 'P', 512, 512, 512, 512, 'P', 512, 512, 512, 512, 'P'],
-    'vgg16': [64, 64, 'P', 128, 128, 'P', 256, 256, 256, 'P', 512, 512, 512, 'P', 512, 512, 512, 'P']
-}
 
 dataset = ['mnist', 'cifar10', 'caltech', 'cifar10_dvs', 'nmnist', 'ncaltech']
 
@@ -51,13 +43,6 @@ input_dim_ref = {
     'urbansound': 1,
 }
 
-log_colors_config = {
-    'DEBUG': 'cyan',
-    'WARNING': 'yellow',
-    'ERROR': 'red',
-    'CRITICAL': 'red',
-}
-
 def ensure_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
@@ -69,6 +54,7 @@ def get_local_time():
     return cur
 
 class Logger:
+    ''' spikingjelly induce logging not work '''
     def __init__(self, args, state=None, desc=None):
         log_root = args.out_dir
         dir_name = os.path.dirname(log_root)
@@ -97,29 +83,6 @@ class Logger:
         f.close()
 
 
-def calc_vgg_model_parameter_num(arch='vgg5', input_channel=3, img_size=32, num_cls=10):
-    dim = img_size
-    in_channel = input_channel
-    res = 0
-    # conv part
-    for x in vgg_cfg[arch]:
-        if x == 'D':
-            pass
-        elif x == 'P':
-            dim //= 2
-        else:
-            res += (3 * 3 * in_channel) * x
-            in_channel = x
-
-    # fc part
-    if arch in ['vgg5', 'vgg9']:
-        res += (dim * dim * in_channel * 1024 + 1024 * num_cls)
-    elif arch in ['vgg19', 'vgg16']:
-        res += (dim * dim * in_channel * 4096 + 4096 * 4096 + 4096 * 10)
-    else:
-        raise NotImplementedError(f'Invalid architecture name: {arch}')
-    
-    return res
 
 def generate_infer_one_sample(T=5):
     print('Load infer data')
@@ -209,6 +172,7 @@ def generate_infer_one_sample(T=5):
     print('n-caltech: ', frame.shape, type(frame))
     torch.save(frame, './infer_data/ncaltech_frame.pt')
 
+# select top10 from 101
 class CaltechTop10(torch.utils.data.Dataset):
     def __init__(self, data):
         top10 = [5, 3, 0, 1, 94, 2, 12, 19, 55, 23]
@@ -226,6 +190,7 @@ class CaltechTop10(torch.utils.data.Dataset):
         return tar[0], tar[1]
     
 def split_retrain(x_train, x_test, y_train, y_test, target_class, num_cls=10):
+    ''' resample dataset for specific classes for pruning '''
     mapping = {k: v for k, v in zip(target_class, range(1, len(target_class) + 1))}
 
     length = int(len(y_train) / (num_cls * 10) - len(target_class))
@@ -268,28 +233,6 @@ def split_retrain(x_train, x_test, y_train, y_test, target_class, num_cls=10):
             y_retrain_test = torch.concat([y_retrain_test, negative_label], dim=0)
     
     return x_retrain_train, y_retrain_train, x_retrain_test, y_retrain_test
-
-def calc_apoz(activations, threshold=60, min_num_filter=16):
-    layers_idxs = []
-    apoz_all = []
-    for i, act in enumerate(activations):
-        idxs = []
-        apoz = []
-        act = torch.permute(act, dims=[1,0,2,3])  # (N, C, H, W) -> (C, N, H, W)
-
-        for _, features in enumerate(act):
-            size = torch.numel(features)
-            num_zeros = torch.numel(features[features == 0])
-            A = 100 * num_zeros / size
-            apoz.append(A)
-            if (A > (threshold - i)) & (min_num_filter < act.shape[0] - idxs.count(0)):
-                idxs.append(0)
-            else:
-                idxs.append(1)
-        layers_idxs.append(idxs)
-        apoz_all.append(apoz)
-
-    return layers_idxs, apoz_all
 
 def spike_count(layers, data):
     cnt = 0
@@ -392,15 +335,4 @@ def get_urbansound_dataset(path='./UrbanSound/'):
 
     return train_dataset, test_dataset
 
-
-if __name__ == '__main__':
-    tb = PrettyTable(['Dataset', 'Architecture', '#(Millions)'])
-    tb.title = 'Model Parameter Number'
-    for ds in dataset:
-        for arch in vgg_cfg.keys():
-            param_num = calc_vgg_model_parameter_num(arch, input_dim_ref[ds], img_size_ref[ds], 10)
-            param_num = int(param_num // 1e6)
-            tb.add_row([ds, arch, param_num])
-
-    print(tb)
     
