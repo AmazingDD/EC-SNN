@@ -130,7 +130,6 @@ elif args.dataset == 'cifar10':
         train=False,
         transform=transform_test,
         download=True)  
-        
 elif args.dataset == 'caltech':
     # batch=16
     transform_all = transforms.Compose([
@@ -147,7 +146,7 @@ elif args.dataset == 'caltech':
         download=True)
         
     dataset = CaltechTop10(dataset)
-    
+
     train_dataset, test_dataset = split_to_train_test_set(0.8, dataset, args.num_cls)
 
 elif args.dataset == 'cifar10_dvs':
@@ -190,10 +189,18 @@ elif args.dataset == 'ncaltech':
     train_dataset, test_dataset = split_to_train_test_set(0.8, dataset, args.num_cls)
 
 elif args.dataset == 'gtzan':
-    train_dataset, test_dataset = get_gtzan_dataset(args.data_dir) 
+    if not os.path.exists('./gtzan_dataset.pt'):
+        train_dataset, test_dataset = get_gtzan_dataset(args.data_dir) 
+        torch.save([train_dataset, test_dataset], './gtzan_dataset.pt')
+    else:
+        train_dataset, test_dataset = torch.load('./gtzan_dataset.pt')
 
 elif args.dataset == 'urbansound':
-    train_dataset, test_dataset = get_urbansound_dataset(args.data_dir) 
+    if not os.path.exists('./urbansound_dataset.pt'):
+        train_dataset, test_dataset = get_urbansound_dataset(args.data_dir) 
+        torch.save([train_dataset, test_dataset], './urbansound_dataset.pt')
+    else:
+        train_dataset, test_dataset = torch.load('./urbansound_dataset.pt')
 
 else:
     raise NotImplementedError(f'Invalid dataset name: {args.dataset}...')
