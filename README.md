@@ -19,7 +19,15 @@ This is the repository of our article published in IJCAI 2024 "EC-SNN: Splitting
 
 ## How to run
 
+### model training
+
 ```
+./shell/train.sh
+```
+
+### cifarnet quick start
+```
+# training
 python ecsnn.py -arch=cifarnet -act=snn -device=cuda:4 -train 
 python ecsnn.py -arch=cifarnet -act=ann -device=cuda:4 -train 
 python ecsnn.py -arch=cifarnet -act=snn -prune -b=128 -split_dir=./splitted/ -device=cuda:4 -apoz=95 -c 0 1 2 3 4 5 6 7 8 9
@@ -27,15 +35,15 @@ python ecsnn.py -arch=cifarnet -act=ann -prune -b=128 -split_dir=./splitted/ -de
 python ecsnn.py -arch=cifarnet -act=snn -fusion -split_dir=./splitted/ -device=cuda:4 -b=128
 python ecsnn.py -arch=cifarnet -act=ann -fusion -split_dir=./splitted/ -device=cuda:4 -b=128
 
+# latency
 python ecsnn.py -arch=cifarnet -act=snn -device=cuda:4 -infer 
 python ecsnn.py -arch=cifarnet -act=ann -device=cuda:4 -infer 
-
 python ecsnn.py -arch=cifarnet -act=snn -device=cuda:4 -infer -split -split_dir=./splitted/
 python ecsnn.py -arch=cifarnet -act=ann -device=cuda:4 -infer -split -split_dir=./splitted/
 
+# energy consumption
 python ecsnn.py -arch=cifarnet -act=snn -device=cuda:4 -energy -device=cuda:4 -b=128
 python ecsnn.py -arch=cifarnet -act=ann -device=cuda:4 -energy -device=cuda:4 -b=128
-
 python ecsnn.py -arch=cifarnet -act=snn -device=cuda:4 -energy -split -split_dir=./splitted/ -device=cuda:4 -b=128
 python ecsnn.py -arch=cifarnet -act=ann -device=cuda:4 -energy -split -split_dir=./splitted/ -device=cuda:4 -b=128
 ```

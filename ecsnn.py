@@ -193,6 +193,7 @@ elif args.dataset == 'gtzan':
         train_dataset, test_dataset = get_gtzan_dataset(args.data_dir) 
         torch.save([train_dataset, test_dataset], './gtzan_dataset.pt')
     else:
+        print('Files already processed in data_dir')
         train_dataset, test_dataset = torch.load('./gtzan_dataset.pt')
 
 elif args.dataset == 'urbansound':
@@ -200,6 +201,7 @@ elif args.dataset == 'urbansound':
         train_dataset, test_dataset = get_urbansound_dataset(args.data_dir) 
         torch.save([train_dataset, test_dataset], './urbansound_dataset.pt')
     else:
+        print('Files already processed in data_dir')
         train_dataset, test_dataset = torch.load('./urbansound_dataset.pt')
 
 else:
@@ -330,11 +332,18 @@ if args.train:
                 out_fr = 0.
                 loss = 0.
 
-                for t in range(args.T):
-                    encoded_img = encoder(img) if encoder is not None else img
-                    output = net(encoded_img)
-                    out_fr += output
-                    loss += F.cross_entropy(output, label)
+                if args.dataset in ['cifar10_dvs', 'nmnist', 'ncaltech']:
+                    img = img.transpose(0, 1)
+                    for t in range(args.T):
+                        output = net(img[t])
+                        out_fr += output
+                        loss += F.cross_entropy(output, label)
+                else:
+                    for t in range(args.T):
+                        encoded_img = encoder(img) if encoder is not None else img
+                        output = net(encoded_img)
+                        out_fr += output
+                        loss += F.cross_entropy(output, label)
 
                 out_fr = out_fr / args.T
                 loss /= args.T
