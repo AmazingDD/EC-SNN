@@ -282,11 +282,18 @@ if args.train:
             out_fr = 0.
             loss = 0.
 
-            for t in range(args.T):
-                encoded_img = encoder(img) if encoder is not None else img
-                output = net(encoded_img)
-                out_fr += output
-                loss += F.cross_entropy(output, label)
+            if args.dataset in ['cifar10_dvs', 'nmnist', 'ncaltech']:
+                img = img.transpose(0, 1)
+                for t in range(args.T):
+                    output = net(img[t])
+                    out_fr += output
+                    loss += F.cross_entropy(output, label)
+            else:
+                for t in range(args.T):
+                    encoded_img = encoder(img) if encoder is not None else img
+                    output = net(encoded_img)
+                    out_fr += output
+                    loss += F.cross_entropy(output, label)
 
             out_fr = out_fr / args.T
             loss /= args.T
