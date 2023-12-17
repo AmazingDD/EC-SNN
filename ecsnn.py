@@ -742,7 +742,7 @@ if args.fusion:
     model_names = [f for f in os.listdir(splitted_model_dir) if f.endswith('.pth')]
     pmodels = []
     for model_name in model_names:
-        print(f'Load {model_name} ')
+        logger.info(f'Load {model_name} ')
         pth = torch.load(os.path.join(splitted_model_dir, model_name), map_location='cpu')
         pmodels.append(pth['net'])
 
