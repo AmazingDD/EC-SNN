@@ -131,31 +131,39 @@ elif args.dataset == 'cifar10':
         transform=transform_test,
         download=True)  
 elif args.dataset == 'caltech':
-    # batch=16
-    transform_all = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.RandomHorizontalFlip(), 
-        transforms.ToTensor(),
-        transforms.Lambda(lambda x: x.repeat(3,1,1) if x.shape[0] == 1 else x),
-        transforms.Normalize(mean = [0.485,0.456,0.406], std=[0.229,0.224,0.225]),
-    ])
+    if not os.path.exists('./caltech_dataset.pt'):
+        # batch=16
+        transform_all = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.RandomHorizontalFlip(), 
+            transforms.ToTensor(),
+            transforms.Lambda(lambda x: x.repeat(3,1,1) if x.shape[0] == 1 else x),
+            transforms.Normalize(mean = [0.485,0.456,0.406], std=[0.229,0.224,0.225]),
+        ])
 
-    dataset = torchvision.datasets.Caltech101(
-        root=args.data_dir,
-        transform=transform_all,
-        download=True)
-        
-    dataset = CaltechTop10(dataset)
-
-    train_dataset, test_dataset = split_to_train_test_set(0.8, dataset, args.num_cls)
+        dataset = torchvision.datasets.Caltech101(
+            root=args.data_dir,
+            transform=transform_all,
+            download=True)
+        dataset = CaltechTop10(dataset)
+        train_dataset, test_dataset = split_to_train_test_set(0.8, dataset, args.num_cls)
+        torch.save([train_dataset, test_dataset], './caltech_dataset.pt')
+    else:
+        print('Files already processed in data_dir')
+        train_dataset, test_dataset = torch.load('./caltech_dataset.pt')
 
 elif args.dataset == 'cifar10_dvs':
-    dataset = CIFAR10DVS(
-        root=args.data_dir, 
-        data_type='frame', 
-        frames_number=args.T, 
-        split_by='number')
-    train_dataset, test_dataset = split_to_train_test_set(0.8, dataset, args.num_cls)
+    if not os.path.exists('./cifar10_dvs_dataset.pt'):
+        dataset = CIFAR10DVS(
+            root=args.data_dir, 
+            data_type='frame', 
+            frames_number=args.T, 
+            split_by='number')
+        train_dataset, test_dataset = split_to_train_test_set(0.8, dataset, args.num_cls)
+        torch.save([train_dataset, test_dataset], './cifar10_dvs_dataset.pt')
+    else:
+        print('Files already processed in data_dir')
+        train_dataset, test_dataset = torch.load('./cifar10_dvs_dataset.pt')
 
 elif args.dataset == 'nmnist':
     train_dataset = NMNIST(
@@ -172,21 +180,26 @@ elif args.dataset == 'nmnist':
         split_by='number')
 
 elif args.dataset == 'ncaltech':
-    transform_all = transforms.Compose([
-        transforms.Lambda(lambda x: torch.tensor(x)),
-        transforms.Resize((224, 224), antialias=True),
-    ])
+    if not os.path.exists('./ncaltech_dataset.pt'):
+        transform_all = transforms.Compose([
+            transforms.Lambda(lambda x: torch.tensor(x)),
+            transforms.Resize((224, 224), antialias=True),
+        ])
 
-    dataset = NCaltech101(
-        root=args.data_dir, 
-        data_type='frame',
-        frames_number=args.T,
-        transform=transform_all,
-        split_by='number')
-    
-    dataset = CaltechTop10(dataset)
-    
-    train_dataset, test_dataset = split_to_train_test_set(0.8, dataset, args.num_cls)
+        dataset = NCaltech101(
+            root=args.data_dir, 
+            data_type='frame',
+            frames_number=args.T,
+            transform=transform_all,
+            split_by='number')
+        
+        dataset = CaltechTop10(dataset)
+        
+        train_dataset, test_dataset = split_to_train_test_set(0.8, dataset, args.num_cls)
+        torch.save([train_dataset, test_dataset], './ncaltech_dataset.pt')
+    else:
+        print('Files already processed in data_dir')
+        train_dataset, test_dataset = torch.load('./ncaltech_dataset.pt')
 
 elif args.dataset == 'gtzan':
     if not os.path.exists('./gtzan_dataset.pt'):
