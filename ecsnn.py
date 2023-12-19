@@ -88,155 +88,159 @@ logger = Logger(args, desc=desc)
 logger.info(args)
 ensure_dir(f'{args.model_dir}')
 
-logger.info('Load data')
-if args.dataset == 'mnist':
-    transform_train = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
-    ])
-    transform_test = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
-    ])
-    train_dataset = torchvision.datasets.MNIST(
+if not args.infer:
+    logger.info('Load data')
+    if args.dataset == 'mnist':
+        transform_train = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+        ])
+        transform_test = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+        ])
+        train_dataset = torchvision.datasets.MNIST(
+                root=args.data_dir,
+                train=True,
+                transform=transform_train,
+                download=True)
+        test_dataset = torchvision.datasets.MNIST(
+                root=args.data_dir,
+                train=False,
+                transform=transform_test,
+                download=True)
+
+    elif args.dataset == 'cifar10':
+        transform_train = transforms.Compose([
+            transforms.RandomHorizontalFlip(), 
+            transforms.RandomCrop(32, padding=4),
+            transforms.ToTensor(),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ])
+        transform_test = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ])
+        train_dataset = torchvision.datasets.CIFAR10(
             root=args.data_dir,
             train=True,
             transform=transform_train,
             download=True)
-    test_dataset = torchvision.datasets.MNIST(
+        test_dataset = torchvision.datasets.CIFAR10(
             root=args.data_dir,
             train=False,
             transform=transform_test,
-            download=True)
+            download=True)  
+    elif args.dataset == 'caltech':
+        if not os.path.exists('./caltech_dataset.pt'):
+            # batch=16
+            transform_all = transforms.Compose([
+                transforms.Resize((224, 224)),
+                transforms.RandomHorizontalFlip(), 
+                transforms.ToTensor(),
+                transforms.Lambda(lambda x: x.repeat(3,1,1) if x.shape[0] == 1 else x),
+                transforms.Normalize(mean = [0.485,0.456,0.406], std=[0.229,0.224,0.225]),
+            ])
 
-elif args.dataset == 'cifar10':
-    transform_train = transforms.Compose([
-        transforms.RandomHorizontalFlip(), 
-        transforms.RandomCrop(32, padding=4),
-        transforms.ToTensor(),
-        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-    ])
-    transform_test = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-    ])
-    train_dataset = torchvision.datasets.CIFAR10(
-        root=args.data_dir,
-        train=True,
-        transform=transform_train,
-        download=True)
-    test_dataset = torchvision.datasets.CIFAR10(
-        root=args.data_dir,
-        train=False,
-        transform=transform_test,
-        download=True)  
-elif args.dataset == 'caltech':
-    if not os.path.exists('./caltech_dataset.pt'):
-        # batch=16
-        transform_all = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.RandomHorizontalFlip(), 
-            transforms.ToTensor(),
-            transforms.Lambda(lambda x: x.repeat(3,1,1) if x.shape[0] == 1 else x),
-            transforms.Normalize(mean = [0.485,0.456,0.406], std=[0.229,0.224,0.225]),
-        ])
+            dataset = torchvision.datasets.Caltech101(
+                root=args.data_dir,
+                transform=transform_all,
+                download=True)
+            dataset = CaltechTop10(dataset)
+            train_dataset, test_dataset = split_to_train_test_set(0.8, dataset, args.num_cls)
+            torch.save([train_dataset, test_dataset], './caltech_dataset.pt')
+        else:
+            print('Files already processed in data_dir')
+            train_dataset, test_dataset = torch.load('./caltech_dataset.pt')
 
-        dataset = torchvision.datasets.Caltech101(
+    elif args.dataset == 'cifar10_dvs':
+        if not os.path.exists('./cifar10_dvs_dataset.pt'):
+            dataset = CIFAR10DVS(
+                root=args.data_dir, 
+                data_type='frame', 
+                frames_number=args.T, 
+                split_by='number')
+            train_dataset, test_dataset = split_to_train_test_set(0.8, dataset, args.num_cls)
+            torch.save([train_dataset, test_dataset], './cifar10_dvs_dataset.pt')
+        else:
+            print('Files already processed in data_dir')
+            train_dataset, test_dataset = torch.load('./cifar10_dvs_dataset.pt')
+
+    elif args.dataset == 'nmnist':
+        train_dataset = NMNIST(
             root=args.data_dir,
-            transform=transform_all,
-            download=True)
-        dataset = CaltechTop10(dataset)
-        train_dataset, test_dataset = split_to_train_test_set(0.8, dataset, args.num_cls)
-        torch.save([train_dataset, test_dataset], './caltech_dataset.pt')
-    else:
-        print('Files already processed in data_dir')
-        train_dataset, test_dataset = torch.load('./caltech_dataset.pt')
-
-elif args.dataset == 'cifar10_dvs':
-    if not os.path.exists('./cifar10_dvs_dataset.pt'):
-        dataset = CIFAR10DVS(
-            root=args.data_dir, 
-            data_type='frame', 
-            frames_number=args.T, 
-            split_by='number')
-        train_dataset, test_dataset = split_to_train_test_set(0.8, dataset, args.num_cls)
-        torch.save([train_dataset, test_dataset], './cifar10_dvs_dataset.pt')
-    else:
-        print('Files already processed in data_dir')
-        train_dataset, test_dataset = torch.load('./cifar10_dvs_dataset.pt')
-
-elif args.dataset == 'nmnist':
-    train_dataset = NMNIST(
-        root=args.data_dir,
-        train=True,
-        data_type='frame',
-        frames_number=args.T,
-        split_by='number')
-    test_dataset = NMNIST(
-        root=args.data_dir,
-        train=False,
-        data_type='frame',
-        frames_number=args.T,
-        split_by='number')
-
-elif args.dataset == 'ncaltech':
-    if not os.path.exists('./ncaltech_dataset.pt'):
-        transform_all = transforms.Compose([
-            transforms.Lambda(lambda x: torch.tensor(x)),
-            transforms.Resize((224, 224), antialias=True),
-        ])
-
-        dataset = NCaltech101(
-            root=args.data_dir, 
+            train=True,
             data_type='frame',
             frames_number=args.T,
-            transform=transform_all,
             split_by='number')
-        
-        dataset = CaltechTop10(dataset)
-        
-        train_dataset, test_dataset = split_to_train_test_set(0.8, dataset, args.num_cls)
-        torch.save([train_dataset, test_dataset], './ncaltech_dataset.pt')
-    else:
-        print('Files already processed in data_dir')
-        train_dataset, test_dataset = torch.load('./ncaltech_dataset.pt')
+        test_dataset = NMNIST(
+            root=args.data_dir,
+            train=False,
+            data_type='frame',
+            frames_number=args.T,
+            split_by='number')
 
-elif args.dataset == 'gtzan':
-    if not os.path.exists('./gtzan_dataset.pt'):
-        train_dataset, test_dataset = get_gtzan_dataset(args.data_dir) 
-        torch.save([train_dataset, test_dataset], './gtzan_dataset.pt')
-    else:
-        print('Files already processed in data_dir')
-        train_dataset, test_dataset = torch.load('./gtzan_dataset.pt')
+    elif args.dataset == 'ncaltech':
+        if not os.path.exists('./ncaltech_dataset.pt'):
+            transform_all = transforms.Compose([
+                transforms.Lambda(lambda x: torch.tensor(x)),
+                transforms.Resize((224, 224), antialias=True),
+            ])
 
-elif args.dataset == 'urbansound':
-    if not os.path.exists('./urbansound_dataset.pt'):
-        train_dataset, test_dataset = get_urbansound_dataset(args.data_dir) 
-        torch.save([train_dataset, test_dataset], './urbansound_dataset.pt')
+            dataset = NCaltech101(
+                root=args.data_dir, 
+                data_type='frame',
+                frames_number=args.T,
+                transform=transform_all,
+                split_by='number')
+            
+            dataset = CaltechTop10(dataset)
+            
+            train_dataset, test_dataset = split_to_train_test_set(0.8, dataset, args.num_cls)
+            torch.save([train_dataset, test_dataset], './ncaltech_dataset.pt')
+        else:
+            print('Files already processed in data_dir')
+            train_dataset, test_dataset = torch.load('./ncaltech_dataset.pt')
+
+    elif args.dataset == 'gtzan':
+        if not os.path.exists('./gtzan_dataset.pt'):
+            train_dataset, test_dataset = get_gtzan_dataset(args.data_dir) 
+            torch.save([train_dataset, test_dataset], './gtzan_dataset.pt')
+        else:
+            print('Files already processed in data_dir')
+            train_dataset, test_dataset = torch.load('./gtzan_dataset.pt')
+
+    elif args.dataset == 'urbansound':
+        if not os.path.exists('./urbansound_dataset.pt'):
+            train_dataset, test_dataset = get_urbansound_dataset(args.data_dir) 
+            torch.save([train_dataset, test_dataset], './urbansound_dataset.pt')
+        else:
+            print('Files already processed in data_dir')
+            train_dataset, test_dataset = torch.load('./urbansound_dataset.pt')
+
     else:
-        print('Files already processed in data_dir')
-        train_dataset, test_dataset = torch.load('./urbansound_dataset.pt')
+        raise NotImplementedError(f'Invalid dataset name: {args.dataset}...')
+
+    train_data_loader = torch.utils.data.DataLoader(
+        dataset=train_dataset,
+        batch_size=args.b,
+        shuffle=True,
+        drop_last=True, 
+        num_workers=args.j, 
+        pin_memory=True)
+
+    test_data_loader = torch.utils.data.DataLoader(
+        dataset=test_dataset,
+        batch_size=args.b,
+        shuffle=False,
+        drop_last=False, 
+        num_workers=args.j, 
+        pin_memory=True)
+
+    logger.info(f'[{args.dataset}] train samples: {len(train_dataset)}, test samples: {len(test_dataset)}')
 
 else:
-    raise NotImplementedError(f'Invalid dataset name: {args.dataset}...')
-
-train_data_loader = torch.utils.data.DataLoader(
-    dataset=train_dataset,
-    batch_size=args.b,
-    shuffle=True,
-    drop_last=True, 
-    num_workers=args.j, 
-    pin_memory=True)
-
-test_data_loader = torch.utils.data.DataLoader(
-    dataset=test_dataset,
-    batch_size=args.b,
-    shuffle=False,
-    drop_last=False, 
-    num_workers=args.j, 
-    pin_memory=True)
-
-logger.info(f'[{args.dataset}] train samples: {len(train_dataset)}, test samples: {len(test_dataset)}')
+    pass
 
 logger.info('Create new model')
 net = VGG(
@@ -1130,7 +1134,7 @@ if args.energy:
 
         cankao = {f'{k}: {v:2f}' for k, v in zip(model_names, spike_per_model_rec.tolist())}
 
-        logger.info(f'average spikes for one test sample with {args.T} frames in {args.dataset} with architecture {args.act}-{args.arch}: {np.sum(spike_per_model_rec) / device_num:.2f}, min: {np.min(spike_per_model_rec):.2f}, max: {np.max(spike_per_model_rec):.2f}, details per model: {cankao}')
+        logger.info(f'average spikes for one test sample with {args.T} frames in {args.dataset} with architecture {args.act}-{args.arch}: {np.sum(spike_per_model_rec) / device_num:.2f}, std: {np.std(spike_per_model_rec):.2f}, min: {np.min(spike_per_model_rec):.2f}, max: {np.max(spike_per_model_rec):.2f}, details per model: {cankao}')
 
     else:
         if os.path.exists(os.path.join(args.model_dir, f'{args.dataset}_{args.arch}_{args.act}_T{args.T}_checkpoint_max.pth')):

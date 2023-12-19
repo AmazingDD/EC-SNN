@@ -6,7 +6,8 @@ This is the repository of our article published in IJCAI 2024 "EC-SNN: Splitting
 - [x] 1213加急实验
 - [x] requirements章节的python包依赖补充好
 - [ ] run /shell/infer.sh with raspberry @TWT
-- [ ] run /shell/more-split/中的全部infer开头文件 with raspberry @TWT
+- [ ] run /shell/more-split/split_infer.sh 记得将split_dir换成3/5/7/9 @TWT
+- [ ] 结果汇总到final页面中
 - [ ] how to run完善
 - [ ] appendix for all results
 - [ ] there are some code redundancy in `ecsnn.py` (冗余但不影响运行效率，有机会再改吧)
