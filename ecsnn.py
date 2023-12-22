@@ -925,11 +925,13 @@ if args.infer:
         img = torch.load('./infer_data/ncaltech_frame.pt', map_location='cpu')
     elif args.dataset == 'gtzan':
         img = torch.load('./infer_data/gtzan_frame.pt', map_location='cpu')
+    elif args.dataset == 'urbansound':
+        img = torch.load('./infer_data/urbansound_frame.pt', map_location='cpu')
     else:
         raise NotImplementedError(f'Invalid dataset name: {args.dataset}...')
     
     if args.split:
-        # split infer mode
+        # EC split infer mode
         splitted_model_dir = os.path.join(args.split_dir, f'{args.dataset}_{args.arch}_{args.act}_T{args.T}_checkpoint/')
         pmodels = []
         model_names = [f for f in os.listdir(splitted_model_dir) if f.endswith('.pth')]
