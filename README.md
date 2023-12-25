@@ -4,7 +4,7 @@ This is the repository of our article published in IJCAI 2024 "EC-SNN: Splitting
 ## Overview
 
 <p align="center">
-<img src="./infer_data/overview.png" align="center" width="90%" style="margin: 0 auto">
+<img src="./infer_data/overview.png" align="center" width="100%" style="margin: 0 auto">
 </p>
 
 ## Requirements
@@ -50,11 +50,11 @@ make sure `./infer_data/` contains the specific frame you want before making inf
 python ecsnn.py -split -infer -arch=vgg9 -act=snn -device=cpu -split_dir=./splitted/ -dataset=cifar10
 ```
 
-For more details about each arguments, try reaching our Github pages later.
+_For more details about each arguments, try reaching our Github pages later._
 
 ### cifarnet quick start
 
-implement the following commands step by step to get the quick results.
+Implement the following commands step by step to get the quick results.
 
 ```
 # training
