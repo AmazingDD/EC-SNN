@@ -1,18 +1,11 @@
 # EC-SNN
 This is the repository of our article published in IJCAI 2024 "EC-SNN: Splitting Spiking Neural Network for Smart Sensors in Edge Computing" and of several follow-up studies.
 
-## TODO List
-
-- [x] 1213加急实验
-- [x] requirements章节的python包依赖补充好
-- [ ] run /shell/infer.sh with raspberry @TWT
-- [ ] run /shell/more-split/split_infer.sh 记得将split_dir换成3/5/7/9 @TWT
-- [ ] 结果汇总到final页面中
-- [ ] how to run完善
-- [ ] appendix for all results
-- [ ] there are some code redundancy in `ecsnn.py` (冗余但不影响运行效率，有机会再改吧)
-
 ## Overview
+
+<p align="center">
+<img src="./infer_data/overview.png" align="center" width="90%" style="margin: 0 auto">
+</p>
 
 ## Requirements
 
@@ -29,34 +22,60 @@ opencv-python==4.8.1.78
 
 ## How to run
 
+Examples of running commands for different purposes are listed below, please modify corresponding parts to implement your expected task. (All running commands in shell scripts will be attached to Github Pages later.)
+
 ### model training
 
 ```
-./shell/train.sh
-./shell/ec-train.sh
+python ecsnn.py -train -arch=vgg9 -act=snn -device=cuda -data_dir=. -dataset=cifar10 -b=16
 ```
+
+### model pruning for one edge device with all classes selected
+
+```
+python ecsnn.py -prune -arch=vgg9 -act=snn -data_dir=. -dataset=cifar10 -b=16 -split_dir=./splitted/ -device=cuda -apoz=95 -c 0 1 2 3 4 5 6 7 8 9
+```
+
+### energy consumption
+
+```
+python ecsnn.py -split -energy -arch=vgg9 -act=snn -device=cuda -split_dir=./splitted/ -data_dir=. -dataset=cifar10 -b=16
+```
+
+### latency
+
+make sure `./infer_data/` contains the specific frame you want before making inference
+
+```
+python ecsnn.py -split -infer -arch=vgg9 -act=snn -device=cpu -split_dir=./splitted/ -dataset=cifar10
+```
+
+For more details about each arguments, try reaching our Github pages later.
 
 ### cifarnet quick start
+
+implement the following commands step by step to get the quick results.
+
 ```
 # training
-python ecsnn.py -arch=cifarnet -act=snn -device=cuda:4 -train 
-python ecsnn.py -arch=cifarnet -act=ann -device=cuda:4 -train 
-python ecsnn.py -arch=cifarnet -act=snn -prune -b=128 -split_dir=./splitted/ -device=cuda:4 -apoz=95 -c 0 1 2 3 4 5 6 7 8 9
-python ecsnn.py -arch=cifarnet -act=ann -prune -b=128 -split_dir=./splitted/ -device=cuda:4 -apoz=56 -c 0 1 2 3 4 5 6 7 8 9
-python ecsnn.py -arch=cifarnet -act=snn -fusion -split_dir=./splitted/ -device=cuda:4 -b=128
-python ecsnn.py -arch=cifarnet -act=ann -fusion -split_dir=./splitted/ -device=cuda:4 -b=128
+python ecsnn.py -arch=cifarnet -act=snn -device=cuda -train 
+python ecsnn.py -arch=cifarnet -act=ann -device=cuda -train 
+python ecsnn.py -arch=cifarnet -act=snn -prune -b=128 -split_dir=./splitted/ -device=cuda -apoz=95 -c 0 1 2 3 4 5 6 7 8 9
+python ecsnn.py -arch=cifarnet -act=ann -prune -b=128 -split_dir=./splitted/ -device=cuda -apoz=56 -c 0 1 2 3 4 5 6 7 8 9
+python ecsnn.py -arch=cifarnet -act=snn -fusion -split_dir=./splitted/ -device=cuda -b=128
+python ecsnn.py -arch=cifarnet -act=ann -fusion -split_dir=./splitted/ -device=cuda -b=128
 
 # latency
-python ecsnn.py -arch=cifarnet -act=snn -device=cuda:4 -infer 
-python ecsnn.py -arch=cifarnet -act=ann -device=cuda:4 -infer 
-python ecsnn.py -arch=cifarnet -act=snn -device=cuda:4 -infer -split -split_dir=./splitted/
-python ecsnn.py -arch=cifarnet -act=ann -device=cuda:4 -infer -split -split_dir=./splitted/
+python ecsnn.py -arch=cifarnet -act=snn -device=cuda -infer 
+python ecsnn.py -arch=cifarnet -act=ann -device=cuda -infer 
+python ecsnn.py -arch=cifarnet -act=snn -device=cuda -infer -split -split_dir=./splitted/
+python ecsnn.py -arch=cifarnet -act=ann -device=cuda -infer -split -split_dir=./splitted/
 
 # energy consumption
-python ecsnn.py -arch=cifarnet -act=snn -device=cuda:4 -energy -b=128
-python ecsnn.py -arch=cifarnet -act=ann -device=cuda:4 -energy -b=128
-python ecsnn.py -arch=cifarnet -act=snn -device=cuda:4 -energy -split -split_dir=./splitted/ -b=128
-python ecsnn.py -arch=cifarnet -act=ann -device=cuda:4 -energy -split -split_dir=./splitted/ -b=128
+python ecsnn.py -arch=cifarnet -act=snn -device=cuda -energy -b=128
+python ecsnn.py -arch=cifarnet -act=ann -device=cuda -energy -b=128
+python ecsnn.py -arch=cifarnet -act=snn -device=cuda -energy -split -split_dir=./splitted/ -b=128
+python ecsnn.py -arch=cifarnet -act=ann -device=cuda -energy -split -split_dir=./splitted/ -b=128
 ```
 
 ## Datasets
@@ -82,3 +101,9 @@ Please cite the following paper if you find our work contributes to yours in any
   year={2024}
 }
 ```
+
+## TODO List
+
+- [ ] make over shell commands to Github pages
+- [ ] appendix for all results
+- [ ] there are some code redundancy in `ecsnn.py` (redundancy without impact on running efficiency)
