@@ -27,19 +27,21 @@ Examples of running commands for different purposes are listed below, please mod
 ### model training
 
 ```
-python ecsnn.py -train -arch=vgg9 -act=snn -device=cuda -data_dir=. -dataset=cifar10 -b=16
+python ecsnn.py -train -arch=vgg9 -act=snn -device=cuda -data_dir=. -dataset=cifar10 -b=128
 ```
 
 ### model pruning for one edge device with all classes selected
 
+make sure the class tockens are integers starting from 0.
+
 ```
-python ecsnn.py -prune -arch=vgg9 -act=snn -data_dir=. -dataset=cifar10 -b=16 -split_dir=./splitted/ -device=cuda -apoz=95 -c 0 1 2 3 4 5 6 7 8 9
+python ecsnn.py -prune -arch=vgg9 -act=snn -data_dir=. -dataset=cifar10 -b=128 -split_dir=./splitted/ -device=cuda -apoz=95 -c 0 1 2 3 4 5 6 7 8 9
 ```
 
 ### energy consumption
 
 ```
-python ecsnn.py -split -energy -arch=vgg9 -act=snn -device=cuda -split_dir=./splitted/ -data_dir=. -dataset=cifar10 -b=16
+python ecsnn.py -split -energy -arch=vgg9 -act=snn -device=cuda -split_dir=./splitted/ -data_dir=. -dataset=cifar10 -b=128
 ```
 
 ### latency
@@ -95,7 +97,7 @@ Please cite the following paper if you find our work contributes to yours in any
 
 ```
 @inproceedings{,
-  title={EC-SNN: Splitting Spiking Neural Network for Smart Sensors in Edge Computing},
+  title={EC-SNN: Splitting Deep Spiking Neural Networks on Edge Devices},
   author={},
   booktitle={},
   year={2024}
