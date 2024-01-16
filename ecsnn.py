@@ -962,7 +962,7 @@ if args.infer:
                 img = img.transpose(0, 1)
                 for t in range(args.T):
 
-                    # 这个用来存t这一时刻的各个模型推理一个frame时间
+                    # store the infer time of each model at time t
                     fe_time_rec = []
                     fe_rec = []
                     for pmodel in pmodels:
@@ -975,7 +975,7 @@ if args.infer:
 
                     elapse_time = max(fe_time_rec)
 
-                    # 这个东西用来存T个时刻各个模型推理一个frame的时间
+                    # store all the infer time of each model at all T time
                     pmodels_infer_time_record.append(fe_time_rec)
 
                     start_time = time.time()
@@ -1008,7 +1008,7 @@ if args.infer:
 
             logger.info(f'infer time: {np.mean(infer_time_record):.4f}s')
             pmodels_infer_time_record = np.array(pmodels_infer_time_record)
-            # 这个相当于把原本T*device_num的记录平均成1*device_num，也就是代表各个pmodel推一帧样本（平均）要多久
+            # T*device_num records to 1*device_num，represent avg time for pmodel infer one frame
             res = pmodels_infer_time_record.mean(axis=0)
             cankao = [f'{k}: {v:.4f}' for k, v in zip(model_names, res)]
             logger.info(f'average of infer one frame of a sample per pruned model: {np.mean(res):.4f}, max: {np.max(res):.4f}, min:{np.min(res):.4f}, all: {cankao}') 
@@ -1106,7 +1106,7 @@ if args.energy:
 
                             cnt, out = spike_count(pmodel, encoded_img)
 
-                            # 现在存的是各个pmodel推测一个batch内全样本T次后的总脉冲
+                            #  store spike numbers for each pmodel infer one batch for T times 
                             spike_per_model[d] += cnt
 
                             spike_num += cnt
@@ -1114,7 +1114,7 @@ if args.energy:
 
                         fe = torch.concat(fe_rec, dim=1)
                         cnt, _ = spike_count(fusion_model.mlp, fe)
-                        # 理论上全联接层不应该有spike，暂时设置确保
+                        # double-check, no spike in FC
                         assert cnt == 0, 'you know'
                         spike_num += cnt
 
@@ -1126,7 +1126,7 @@ if args.energy:
                 res = spike_num / b
                 rec.append(res.cpu())
 
-                # 现在他存的是一个bath内平均单样本T次后的总脉冲
+                # avg spikes for avg infer one sample in T times
                 spike_per_model = [num / b for num in spike_per_model]
                 spike_per_model_rec.append(spike_per_model)
 
