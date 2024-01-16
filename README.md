@@ -1,5 +1,5 @@
 # EC-SNN
-This is the repository of our article published in IJCAI 2024 "EC-SNN: Splitting Spiking Neural Network for Smart Sensors in Edge Computing" and of several follow-up studies.
+This is the repository of our article published in IJCAI 2024 "EC-SNN: Splitting Deep Spiking Neural Networks on Edge Devices" and of several follow-up studies.
 
 ## Overview
 
@@ -32,7 +32,7 @@ python ecsnn.py -train -arch=vgg9 -act=snn -device=cuda -data_dir=. -dataset=cif
 
 ### model pruning for one edge device with all classes selected
 
-make sure the class tockens are integers starting from 0.
+make sure the class tokens are integers starting from 0.
 
 ```
 python ecsnn.py -prune -arch=vgg9 -act=snn -data_dir=. -dataset=cifar10 -b=128 -split_dir=./splitted/ -device=cuda -apoz=95 -c 0 1 2 3 4 5 6 7 8 9
@@ -56,7 +56,7 @@ _For more details about each arguments, try reaching our Github pages later._
 
 ### cifarnet quick start
 
-Implement the following commands step by step to get the quick results.
+Implement the following commands step by step to get the quick results. We provide this part for a quick access for the whole workflow of EC-SNN.
 
 ```
 # training
@@ -107,5 +107,5 @@ Please cite the following paper if you find our work contributes to yours in any
 ## TODO List
 
 - [ ] make over shell commands to Github pages
-- [ ] appendix for all results
+- [x] appendix for all results
 - [ ] there are some code redundancy in `ecsnn.py` (redundancy without impact on running efficiency)
