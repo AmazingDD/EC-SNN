@@ -108,4 +108,4 @@ Please cite the following paper if you find our work contributes to yours in any
 
 - [ ] make over shell commands to Github pages
 - [x] appendix for all results
-- [ ] there are some code redundancy in `ecsnn.py` (redundancy without impact on running efficiency)
+- [ ] beautify `ecsnn.py` 
