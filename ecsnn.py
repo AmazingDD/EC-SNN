@@ -1045,130 +1045,264 @@ if args.infer:
 
 
 if args.energy:
-    del train_dataset, train_data_loader
+    if False:
+        del train_dataset, train_data_loader
 
-    if args.split:
-        pmodels = []
-        splitted_model_dir = os.path.join(args.split_dir, f'{args.dataset}_{args.arch}_{args.act}_T{args.T}_checkpoint/')
-        model_names = [f for f in os.listdir(splitted_model_dir) if f.endswith('.pth')]
-        fusion_name = [f for f in os.listdir(splitted_model_dir) if f.endswith('.pt')][0]
+        if args.split:
+            pmodels = []
+            splitted_model_dir = os.path.join(args.split_dir, f'{args.dataset}_{args.arch}_{args.act}_T{args.T}_checkpoint/')
+            model_names = [f for f in os.listdir(splitted_model_dir) if f.endswith('.pth')]
+            fusion_name = [f for f in os.listdir(splitted_model_dir) if f.endswith('.pt')][0]
 
-        for model_name in model_names:
-            logger.info(f'Load {model_name} ')
-            pth = torch.load(os.path.join(splitted_model_dir, model_name), map_location='cpu')
-            pmodels.append(pth['net'])
+            for model_name in model_names:
+                logger.info(f'Load {model_name} ')
+                pth = torch.load(os.path.join(splitted_model_dir, model_name), map_location='cpu')
+                pmodels.append(pth['net'])
 
-        pmodels = [pmodel.conv_fc[:-5] for pmodel in pmodels]
-        fusion_model = torch.load(os.path.join(splitted_model_dir, fusion_name), map_location='cpu')
+            pmodels = [pmodel.conv_fc[:-5] for pmodel in pmodels]
+            fusion_model = torch.load(os.path.join(splitted_model_dir, fusion_name), map_location='cpu')
 
-        pmodels = [pmodel.to(args.device) for pmodel in pmodels]
-        fusion_model.to(args.device)
+            pmodels = [pmodel.to(args.device) for pmodel in pmodels]
+            fusion_model.to(args.device)
 
-        device_num = len(pmodels)
+            device_num = len(pmodels)
 
-        with torch.no_grad():
-            rec = []
-            spike_per_model_rec = []
+            with torch.no_grad():
+                rec = []
+                spike_per_model_rec = []
 
-            for img, _ in test_data_loader:
-                img = img.to(args.device)
+                for img, _ in test_data_loader:
+                    img = img.to(args.device)
 
-                spike_num = 0.
-                b = img.shape[0]
-                spike_per_model = [0 for _ in range(device_num)] 
+                    spike_num = 0.
+                    b = img.shape[0]
+                    spike_per_model = [0 for _ in range(device_num)]
 
-                if args.dataset in ['cifar10_dvs', 'nmnist', 'ncaltech']:
-                    img = img.transpose(0, 1)
-                    for t in range(args.T):
-                        fe_rec = []
-                        # for pmodel in pmodels:
-                        for d in range(device_num):
-                            pmodel = pmodels[d]
+                    if args.dataset in ['cifar10_dvs', 'nmnist', 'ncaltech']:
+                        img = img.transpose(0, 1)
+                        for t in range(args.T):
+                            fe_rec = []
+                            # for pmodel in pmodels:
+                            for d in range(device_num):
+                                pmodel = pmodels[d]
 
-                            cnt, out = spike_count(pmodel, img[t])
+                                cnt, out = spike_count(pmodel, img[t])
 
-                            spike_per_model[d] += cnt
+                                spike_per_model[d] += cnt
 
+                                spike_num += cnt
+                                fe_rec.append(out)
+
+                            fe = torch.concat(fe_rec, dim=1)
+                            cnt, _ = spike_count(fusion_model.mlp, fe)
                             spike_num += cnt
-                            fe_rec.append(out)
 
-                        fe = torch.concat(fe_rec, dim=1)
-                        cnt, _ = spike_count(fusion_model.mlp, fe)
-                        spike_num += cnt
-                            
-                else:
-                    for t in range(args.T):
-                        encoded_img = encoder(img) if encoder is not None else img
-                        fe_rec = []
-                        # for pmodel in pmodels:
-                        for d in range(device_num):
-                            pmodel = pmodels[d]
+                    else:
+                        for t in range(args.T):
+                            encoded_img = encoder(img) if encoder is not None else img
+                            fe_rec = []
+                            # for pmodel in pmodels:
+                            for d in range(device_num):
+                                pmodel = pmodels[d]
 
-                            cnt, out = spike_count(pmodel, encoded_img)
+                                cnt, out = spike_count(pmodel, encoded_img)
 
-                            #  store spike numbers for each pmodel infer one batch for T times 
-                            spike_per_model[d] += cnt
+                                #  store spike numbers for each pmodel infer one batch for T times
+                                spike_per_model[d] += cnt
 
+                                spike_num += cnt
+                                fe_rec.append(out)
+
+                            fe = torch.concat(fe_rec, dim=1)
+                            cnt, _ = spike_count(fusion_model.mlp, fe)
+                            # double-check, no spike in FC
+                            assert cnt == 0, 'you know'
                             spike_num += cnt
-                            fe_rec.append(out)
 
-                        fe = torch.concat(fe_rec, dim=1)
-                        cnt, _ = spike_count(fusion_model.mlp, fe)
-                        # double-check, no spike in FC
-                        assert cnt == 0, 'you know'
-                        spike_num += cnt
+                    functional.reset_net(fusion_model)
 
-                functional.reset_net(fusion_model)
+                    for pmodel in pmodels:
+                        functional.reset_net(pmodel)
 
-                for pmodel in pmodels:
-                    functional.reset_net(pmodel)
+                    res = spike_num / b
+                    rec.append(res.cpu())
 
-                res = spike_num / b
-                rec.append(res.cpu())
+                    # avg spikes for avg infer one sample in T times
+                    spike_per_model = [num / b for num in spike_per_model]
+                    spike_per_model_rec.append(spike_per_model)
 
-                # avg spikes for avg infer one sample in T times
-                spike_per_model = [num / b for num in spike_per_model]
-                spike_per_model_rec.append(spike_per_model)
+            spike_per_model_rec = torch.tensor(spike_per_model_rec).cpu().numpy()  # batch_num * device_num
+            # min max mean for pmodels, so need to convert batch_num * device_num to 1 * device_num
+            spike_per_model_rec = spike_per_model_rec.mean(axis=0)
 
-        spike_per_model_rec = torch.tensor(spike_per_model_rec).cpu().numpy()  # batch_num * device_num
-        # min max mean for pmodels, so need to convert batch_num * device_num to 1 * device_num
-        spike_per_model_rec = spike_per_model_rec.mean(axis=0)
+            cankao = {f'{k}: {v:2f}' for k, v in zip(model_names, spike_per_model_rec.tolist())}
 
-        cankao = {f'{k}: {v:2f}' for k, v in zip(model_names, spike_per_model_rec.tolist())}
+            logger.info(f'average spikes for one test sample with {args.T} frames in {args.dataset} with architecture {args.act}-{args.arch}: {np.sum(spike_per_model_rec) / device_num:.2f}, std: {np.std(spike_per_model_rec):.2f}, min: {np.min(spike_per_model_rec):.2f}, max: {np.max(spike_per_model_rec):.2f}, details per model: {cankao}')
 
-        logger.info(f'average spikes for one test sample with {args.T} frames in {args.dataset} with architecture {args.act}-{args.arch}: {np.sum(spike_per_model_rec) / device_num:.2f}, std: {np.std(spike_per_model_rec):.2f}, min: {np.min(spike_per_model_rec):.2f}, max: {np.max(spike_per_model_rec):.2f}, details per model: {cankao}')
+        else:
+            if os.path.exists(os.path.join(args.model_dir, f'{args.dataset}_{args.arch}_{args.act}_T{args.T}_checkpoint_max.pth')):
+                checkpoint = torch.load(os.path.join(args.model_dir, f'{args.dataset}_{args.arch}_{args.act}_T{args.T}_checkpoint_max.pth'), map_location='cpu')
+                net = checkpoint['net']
+                print(f'Load existing model')
 
+            net.to(args.device)
+            net.eval()
+
+            with torch.no_grad():
+                rec = []
+                for img, _ in test_data_loader:
+                    spike_num = 0.
+                    img = img.to(args.device)
+                    b = img.shape[0]
+
+                    if args.dataset in ['cifar10_dvs', 'nmnist', 'ncaltech']:
+                        img = img.transpose(0, 1)
+                        for t in range(args.T):
+                            cnt, _ = spike_count(net.conv_fc, img[t])
+                            spike_num += cnt
+
+                    else:
+                        for t in range(args.T):
+                            encoded_img = encoder(img) if encoder is not None else img
+                            cnt, _ = spike_count(net.conv_fc, encoded_img)
+                            spike_num += cnt
+
+                    functional.reset_net(net)
+
+                    res = spike_num / b
+                    rec.append(res.cpu())
+
+            logger.info(f'average spikes for one test samples with {args.T} frames in {args.dataset} with architecture {args.act}-{args.arch}: {np.mean(rec):.2f}')
     else:
-        if os.path.exists(os.path.join(args.model_dir, f'{args.dataset}_{args.arch}_{args.act}_T{args.T}_checkpoint_max.pth')):
-            checkpoint = torch.load(os.path.join(args.model_dir, f'{args.dataset}_{args.arch}_{args.act}_T{args.T}_checkpoint_max.pth'), map_location='cpu')
-            net = checkpoint['net']
-            print(f'Load existing model')
+        from energy import mac_ac_count
+        del train_dataset, train_data_loader
 
-        net.to(args.device)
-        net.eval()
+        if args.split:
+            pmodels = []
+            splitted_model_dir = os.path.join(args.split_dir, f'{args.dataset}_{args.arch}_{args.act}_T{args.T}_checkpoint/')
+            model_names = [f for f in os.listdir(splitted_model_dir) if f.endswith('.pth')]
+            fusion_name = [f for f in os.listdir(splitted_model_dir) if f.endswith('.pt')][0]
 
-        with torch.no_grad():
-            rec = []
-            for img, _ in test_data_loader:
-                spike_num = 0.
-                img = img.to(args.device)
-                b = img.shape[0]
+            for model_name in model_names:
+                logger.info(f'Load {model_name} ')
+                pth = torch.load(os.path.join(splitted_model_dir, model_name), map_location='cpu')
+                pmodels.append(pth['net'])
 
-                if args.dataset in ['cifar10_dvs', 'nmnist', 'ncaltech']:
-                    img = img.transpose(0, 1)
-                    for t in range(args.T):
-                        cnt, _ = spike_count(net.conv_fc, img[t])
-                        spike_num += cnt
-                            
-                else:
-                    for t in range(args.T):
-                        encoded_img = encoder(img) if encoder is not None else img
-                        cnt, _ = spike_count(net.conv_fc, encoded_img)
-                        spike_num += cnt
+            pmodels = [pmodel.conv_fc[:-5] for pmodel in pmodels]
+            fusion_model = torch.load(os.path.join(splitted_model_dir, fusion_name), map_location='cpu')
 
-                functional.reset_net(net)
+            pmodels = [pmodel.to(args.device) for pmodel in pmodels]
+            fusion_model.to(args.device)
 
-                res = spike_num / b
-                rec.append(res.cpu())
+            device_num = len(pmodels)
 
-        logger.info(f'average spikes for one test samples with {args.T} frames in {args.dataset} with architecture {args.act}-{args.arch}: {np.mean(rec):.2f}')
+            with torch.no_grad():
+                rec = []
+                spike_per_model_rec = []
+
+                for img, _ in test_data_loader:
+                    img = img.to(args.device)
+
+                    spike_num = 0.
+                    b = img.shape[0]
+                    spike_per_model = [0 for _ in range(device_num)]
+
+                    if args.dataset in ['cifar10_dvs', 'nmnist', 'ncaltech']:
+                        img = img.transpose(0, 1)
+                        for t in range(args.T):
+                            fe_rec = []
+                            # for pmodel in pmodels:
+                            for d in range(device_num):
+                                pmodel = pmodels[d]
+
+                                cnt, out = mac_ac_count(pmodel, img[t], img[t].count_nonzero() / img[t].numel())
+
+                                spike_per_model[d] += cnt
+
+                                spike_num += cnt
+                                fe_rec.append(out)
+
+                            fe = torch.concat(fe_rec, dim=1)
+                            cnt, _ = mac_ac_count(fusion_model.mlp, fe)
+                            spike_num += cnt
+
+                    else:
+                        for t in range(args.T):
+                            encoded_img = encoder(img) if encoder is not None else img
+                            fe_rec = []
+                            # for pmodel in pmodels:
+                            for d in range(device_num):
+                                pmodel = pmodels[d]
+
+                                cnt, out = mac_ac_count(pmodel, encoded_img)
+
+                                #  store spike numbers for each pmodel infer one batch for T times
+                                spike_per_model[d] += cnt
+
+                                spike_num += cnt
+                                fe_rec.append(out)
+
+                            fe = torch.concat(fe_rec, dim=1)
+                            cnt, _ = mac_ac_count(fusion_model.mlp, fe)
+                            # double-check, no spike in FC
+                            # assert cnt == 0, 'you know'
+                            spike_num += cnt
+
+                    functional.reset_net(fusion_model)
+
+                    for pmodel in pmodels:
+                        functional.reset_net(pmodel)
+
+                    res = spike_num / b
+                    rec.append(res.cpu())
+
+                    # avg spikes for avg infer one sample in T times
+                    spike_per_model = [num / b for num in spike_per_model]
+                    spike_per_model_rec.append(spike_per_model)
+
+            spike_per_model_rec = torch.tensor(spike_per_model_rec).cpu().numpy()  # batch_num * device_num
+            # min max mean for pmodels, so need to convert batch_num * device_num to 1 * device_num
+            spike_per_model_rec = spike_per_model_rec.mean(axis=0)
+
+            cankao = {f'{k}: {v:2f}' for k, v in zip(model_names, spike_per_model_rec.tolist())}
+
+            logger.info(
+                f'average spikes for one test sample with {args.T} frames in {args.dataset} with architecture {args.act}-{args.arch}: {np.sum(spike_per_model_rec) / device_num:.2f}, std: {np.std(spike_per_model_rec):.2f}, min: {np.min(spike_per_model_rec):.2f}, max: {np.max(spike_per_model_rec):.2f}, details per model: {cankao}')
+
+        else:
+            if os.path.exists(
+                    os.path.join(args.model_dir, f'{args.dataset}_{args.arch}_{args.act}_T{args.T}_checkpoint_max.pth')):
+                checkpoint = torch.load(
+                    os.path.join(args.model_dir, f'{args.dataset}_{args.arch}_{args.act}_T{args.T}_checkpoint_max.pth'),
+                    map_location='cpu')
+                net = checkpoint['net']
+                print(f'Load existing model')
+
+            net.to(args.device)
+            net.eval()
+
+            with torch.no_grad():
+                rec = []
+                for img, _ in test_data_loader:
+                    spike_num = 0.
+                    img = img.to(args.device)
+                    b = img.shape[0]
+
+                    if args.dataset in ['cifar10_dvs', 'nmnist', 'ncaltech']:
+                        img = img.transpose(0, 1)
+                        for t in range(args.T):
+                            cnt, _ = mac_ac_count(pmodel, img[t], img[t].count_nonzero() / img[t].numel())
+                            spike_num += cnt
+
+                    else:
+                        for t in range(args.T):
+                            encoded_img = encoder(img) if encoder is not None else img
+                            cnt, _ = mac_ac_count(net.conv_fc, encoded_img)
+                            spike_num += cnt
+
+                    functional.reset_net(net)
+
+                    res = spike_num / b
+                    rec.append(res.cpu())
+
+            logger.info(f'average spikes for one test samples with {args.T} frames in {args.dataset}')
