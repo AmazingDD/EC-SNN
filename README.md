@@ -1,5 +1,5 @@
 # EC-SNN
-This is the repository of our article published in IJCAI 2024 "EC-SNN: Splitting Deep Spiking Neural Networks on Edge Devices" and of several follow-up studies.
+This is the repository of our article submitted in IJCAI 2024 "EC-SNN: Splitting Deep Spiking Neural Networks on Edge Devices" and of several follow-up studies.
 
 ## Overview
 
