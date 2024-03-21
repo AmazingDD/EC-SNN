@@ -108,5 +108,5 @@ Please cite the following paper if you find our work contributes to yours in any
 
 ## TODO List
 
-- [ ] makeover shell commands to Github pages
+- [ ] makeover shell commands to Github Wiki
 - [ ] beautify `ecsnn.py` 
