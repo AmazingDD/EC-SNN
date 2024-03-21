@@ -1,5 +1,5 @@
 # EC-SNN
-This is the repository of our article submitted in IJCAI 2024 "EC-SNN: Splitting Deep Spiking Neural Networks on Edge Devices" and of several follow-up studies.
+This is the repository of our article published in IJCAI 2024 "EC-SNN: Splitting Deep Spiking Neural Networks on Edge Devices".
 
 ## Overview
 
@@ -22,7 +22,9 @@ opencv-python==4.8.1.78
 
 ## How to run
 
-Examples of running commands for different purposes are listed below, please modify corresponding parts to implement your expected task. (All running commands in shell scripts will be attached to Github Pages later.)
+Examples of running commands for different purposes are listed below, please modify the corresponding parts to implement your expected task. (All running commands in shell scripts will be attached to Github Pages later.)
+
+This repository is a simulation toolkit for researchers to learn the logistics of EC-SNN. To get the results listed in our paper, please deploy the corresponding models to edge devices like Raspberry PI!
 
 ### model training
 
@@ -46,17 +48,17 @@ python ecsnn.py -split -energy -arch=vgg9 -act=snn -device=cuda -split_dir=./spl
 
 ### latency
 
-make sure `./infer_data/` contains the specific frame you want before making inference
+make sure `./infer_data/` contains the specific frame you want before making an inference
 
 ```
 python ecsnn.py -split -infer -arch=vgg9 -act=snn -device=cpu -split_dir=./splitted/ -dataset=cifar10
 ```
 
-_For more details about each arguments, try reaching our Github pages later._
+_For more details about each argument, try reaching our Github pages later._
 
 ### cifarnet quick start
 
-Implement the following commands step by step to get the quick results. We provide this part for a quick access for the whole workflow of EC-SNN.
+Implement the following commands step by step to get quick results. We provide this part for quick access to the whole workflow of EC-SNN.
 
 ```
 # training
@@ -106,6 +108,5 @@ Please cite the following paper if you find our work contributes to yours in any
 
 ## TODO List
 
-- [ ] make over shell commands to Github pages
-- [x] appendix for all results
+- [ ] makeover shell commands to Github pages
 - [ ] beautify `ecsnn.py` 
