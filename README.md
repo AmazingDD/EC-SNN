@@ -98,15 +98,17 @@ You can download experiment data and put them into the data folder. All data are
 Please cite the following paper if you find our work contributes to yours in any way:
 
 ```
-@inproceedings{,
-  title={EC-SNN: Splitting Deep Spiking Neural Networks on Edge Devices},
-  author={},
-  booktitle={},
-  year={2024}
+@inproceedings{ijcai2024p5149,
+  title     = {EC-SNN: Splitting Deep Spiking Neural Networks on Edge Devices},
+  author    = {Di, Yu and Xin, Du and Linshan, Jiang and Wentao, Tong and Shuiguang, Deng},
+  booktitle = {Proceedings of the Thirty-Third International Joint Conference on
+               Artificial Intelligence, {IJCAI-24}},
+  year      = {2024},
 }
 ```
 
 ## TODO List
 
-- [ ] makeover shell commands to Github Wiki
+- [x] makeover shell commands to Github Wiki
+- [ ] Prepare the camera-ready paper and bibtex in this repository
 - [ ] beautify `ecsnn.py` 
