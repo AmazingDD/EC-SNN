@@ -106,9 +106,3 @@ Please cite the following paper if you find our work contributes to yours in any
   year      = {2024},
 }
 ```
-
-## TODO List
-
-- [x] makeover shell commands to Github Wiki
-- [ ] Prepare the camera-ready paper and bibtex in this repository
-- [ ] beautify `ecsnn.py` 
