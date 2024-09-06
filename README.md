@@ -98,11 +98,12 @@ You can download experiment data and put them into the data folder. All data are
 Please cite the following paper if you find our work contributes to yours in any way:
 
 ```
-@inproceedings{ijcai2024p5149,
-  title     = {EC-SNN: Splitting Deep Spiking Neural Networks on Edge Devices},
-  author    = {Di, Yu and Xin, Du and Linshan, Jiang and Wentao, Tong and Shuiguang, Deng},
+@inproceedings{ijcai2024p596,
+  title     = {EC-SNN: Splitting Deep Spiking Neural Networks for Edge Devices},
+  author    = {Yu, Di and Du, Xin and Jiang, Linshan and Tong, Wentao and Deng, Shuiguang},
   booktitle = {Proceedings of the Thirty-Third International Joint Conference on
                Artificial Intelligence, {IJCAI-24}},
-  year      = {2024},
+  pages     = {5389--5397},
+  year      = {2024} 
 }
 ```
